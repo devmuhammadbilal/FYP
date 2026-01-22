@@ -10,11 +10,15 @@ const router = express.Router();
 
 // --- NODEMAILER CONFIGURATION ---
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 2525, // Using port 465 is often more reliable for SSL
+  secure: true, // This must be true for port 465
   auth: {
-    user: process.env.EMAIL_USER, 
-    pass: process.env.EMAIL_PASS, 
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
   },
+  // Add this timeout setting to prevent hanging
+  connectionTimeout: 10000, 
 });
 
 // 1. REGISTER (Send Verification OTP)
@@ -182,5 +186,6 @@ router.post('/reset-password', async (req, res) => {
     res.status(500).json({ message: "Error resetting password" });
   }
 });
+
 
 export default router;
