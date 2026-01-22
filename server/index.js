@@ -19,7 +19,7 @@ const httpServer = createServer(app);
 
 const io = new Server(httpServer, {
   cors: {
-    origin: "http://localhost:5173", 
+    origin: "*", 
     methods: ["GET", "POST"],
   },
 });
@@ -186,10 +186,11 @@ io.on("connection", (socket) => {
 const startServer = async () => {
   try {
     connectDB(process.env.MONGODB_URL);
-    httpServer.listen(8080, () => console.log('Server has Started on port http://localhost:8080'));
+    httpServer.listen(process.env.PORT || 8080, () => console.log('Server has Started on port http://localhost:8080'));
   } catch (error) {
     console.log(error);
   }
 }
+
 
 startServer();
