@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import toast, { Toaster } from 'react-hot-toast'; 
+import config from '../config';
 
 const Login = ({ handleLoginSuccess }) => {
   const [formData, setFormData] = useState({ email: '', password: '' });
@@ -19,7 +20,7 @@ const Login = ({ handleLoginSuccess }) => {
     const loadingToast = toast.loading('Signing in...');
 
     try {
-      const response = await axios.post('http://localhost:8080/api/v1/auth/login', formData);
+      const response = await axios.post(`${config.backendUrl}/api/v1/auth/login`, formData);
       localStorage.setItem('authToken', response.data.token);
       localStorage.setItem('userName', response.data.userName);
       localStorage.setItem('userId', response.data.userId);
@@ -119,5 +120,6 @@ const Login = ({ handleLoginSuccess }) => {
     </div>
   );
 };
+
 
 export default Login;
