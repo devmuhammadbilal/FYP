@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { downloadImage } from '../utils';
 import { Loader } from '../Components';
 import toast, { Toaster } from 'react-hot-toast';
+import config from '../config';
 
 const CollabRoom = () => {
   const userName = localStorage.getItem('userName') || 'Guest';
@@ -28,7 +29,7 @@ const CollabRoom = () => {
   const [statusMsg, setStatusMsg] = useState("");
 
   useEffect(() => {
-    socketRef.current = io("http://localhost:8080");
+    socketRef.current = io(config.backendUrl);
 
     // -- Standard Listeners --
     socketRef.current.on("receive_message", (data) => setMessageList((list) => [...list, data]));
@@ -398,5 +399,6 @@ const CollabRoom = () => {
     </div>
   );
 };
+
 
 export default CollabRoom;
