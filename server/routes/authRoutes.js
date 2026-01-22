@@ -11,7 +11,7 @@ const router = express.Router();
 // --- NODEMAILER CONFIGURATION ---
 const transporter = nodemailer.createTransport({
   host: 'smtp-relay.brevo.com', // Changed from gmail
-  port: 587,                   // THE MAGIC PORT (Render doesn't block this)
+  port: 2525,                   // THE MAGIC PORT (Render doesn't block this)
   secure: false,                // Must be false for port 2525
   auth: {
     user: process.env.EMAIL_USER,
