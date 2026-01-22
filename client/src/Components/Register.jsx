@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast, { Toaster } from 'react-hot-toast'; 
+import config from '../config';
 
 const Register = () => {
   const [step, setStep] = useState(1); // Step 1: Form, Step 2: Verification
@@ -20,7 +21,7 @@ const Register = () => {
     const loadingToast = toast.loading('Creating account...');
 
     try {
-      await axios.post('http://localhost:8080/api/v1/auth/register', formData);
+      await axios.post(`${config.backendUrl}/api/v1/auth/register`, formData);
       toast.success('Verification code sent to email!', { id: loadingToast });
       setStep(2); // Move to next step
     } catch (error) {
@@ -38,7 +39,7 @@ const Register = () => {
     const loadingToast = toast.loading('Verifying email...');
 
     try {
-      await axios.post('http://localhost:8080/api/v1/auth/verify-email', { 
+      await axios.post(`${config.backendUrl}/api/v1/auth/verify-email`, { 
         email: formData.email, 
         otp 
       });
@@ -193,5 +194,6 @@ const Register = () => {
     </div>
   );
 };
+
 
 export default Register;
