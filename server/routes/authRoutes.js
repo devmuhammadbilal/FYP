@@ -11,7 +11,7 @@ const router = express.Router();
 // --- NODEMAILER CONFIGURATION ---
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
-  port: 2525, // Using port 465 is often more reliable for SSL
+  port: 25, // Using port 465 is often more reliable for SSL
   secure: true, // This must be true for port 465
   auth: {
     user: process.env.EMAIL_USER,
@@ -189,3 +189,4 @@ router.post('/reset-password', async (req, res) => {
 
 
 export default router;
+
