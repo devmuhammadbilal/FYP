@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: 'Inter', sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #f9fafe; /* Matches your light theme */
+  color: #111827;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+
+
+/* --- Custom Scrollbar --- */
+.prompt::-webkit-scrollbar {
+  width: 4px;
+}
+
+.prompt::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.prompt::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1; /* Lighter grey for light mode */
+  border-radius: 20px;
+}
+
+.prompt::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8;
+}
+
+/* Hide scrollbar utility for Chat Window */
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
