@@ -1,6 +1,6 @@
 import CreatePost from "./CreatePost";
 import Home from "./Home";
-import Profile from "./profile";
+import Profile from "./Profile";
 import CollabRoom from "./CollabRoom"; // NEW
 
 export {
@@ -8,4 +8,5 @@ export {
     CreatePost,
     Profile,
     CollabRoom // NEW
+
 };
