@@ -3,6 +3,7 @@ import axios from 'axios';
 import { motion } from 'framer-motion';
 import { Card, Loader } from '../Components'; 
 import toast, { Toaster } from 'react-hot-toast'; 
+import config from '../config';
 
 const Profile = () => {
   const [userData, setUserData] = useState(null);
@@ -19,7 +20,7 @@ const Profile = () => {
           return; 
         }
 
-        const { data } = await axios.get('http://localhost:8080/api/v1/profile', {
+        const { data } = await axios.get(`${config.backendUrl}/api/v1/profile`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -101,5 +102,6 @@ const Profile = () => {
     </div>
   );
 };
+
 
 export default Profile;
