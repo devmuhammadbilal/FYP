@@ -1,25 +1,14 @@
-import express from 'express'
+import express from 'express';
 import User from '../mongodb/models/user.js';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import bcrypt from 'bcryptjs'; 
-import nodemailer from 'nodemailer'; 
+import axios from 'axios'; // CHANGED: We use Axios instead of Nodemailer
 
 dotenv.config();
 const router = express.Router();
 
-// --- NODEMAILER CONFIGURATION ---
-const transporter = nodemailer.createTransport({
-  host: 'smtp-relay.brevo.com', // Changed from gmail
-  port: 2525,                   // THE MAGIC PORT (Render doesn't block this)
-  secure: false,                // Must be false for port 2525
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
-
-// 1. REGISTER (Send Verification OTP)
+// 1. REGISTER (Send Verification OTP via EmailJS)
 router.post('/register', async (req, res) => {
   const { username, email, password } = req.body;
 
@@ -34,6 +23,11 @@ router.post('/register', async (req, res) => {
     // Generate Verification OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const expiry = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
+
+    // --- EMERGENCY BACKUP: Log OTP to Console (For Thesis Demo) ---
+    console.log("#############################################");
+    console.log("### EMERGENCY REGISTRATION OTP: ", otp, " ###");
+    console.log("#############################################");
 
     if (existingUser && !existingUser.isVerified) {
       // Update existing unverified user
@@ -55,15 +49,29 @@ router.post('/register', async (req, res) => {
       await user.save();
     }
 
-    // Send Verification Email
-    await transporter.sendMail({
-      from: '"ImageGenie Security" <no-reply@imagegenie.com>',
-      to: email,
-      subject: 'Verify your Email',
-      html: `<b>Welcome to ImageGenie!</b><br>Your verification code is: <h1>${otp}</h1><br>Please enter this code to complete your registration.`
-    });
+    // --- SEND EMAIL VIA EMAILJS (HTTP Request) ---
+    const emailData = {
+      service_id: process.env.EMAILJS_SERVICE_ID,
+      template_id: process.env.EMAILJS_TEMPLATE_ID,
+      user_id: process.env.EMAILJS_PUBLIC_KEY,
+      accessToken: process.env.EMAILJS_PRIVATE_KEY,
+      template_params: {
+        to_email: email,
+        to_name: username,
+        otp: otp,
+        message: "Welcome to ImageGenie! Please verify your account."
+      }
+    };
 
-    res.status(200).json({ message: 'Verification code sent to email' });
+    try {
+      await axios.post('https://api.emailjs.com/api/v1.0/email/send', emailData);
+      console.log('Email sent successfully via EmailJS');
+    } catch (emailError) {
+      console.error('EmailJS Failed (Check Console for Emergency OTP):', emailError.message);
+      // We do NOT stop the request here. We let it succeed so you can use the Console OTP.
+    }
+
+    res.status(200).json({ message: 'Verification code sent (Check logs if email failed)' });
 
   } catch (error) {
     console.error(error);
@@ -71,7 +79,7 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// 2. VERIFY EMAIL (New Route)
+// 2. VERIFY EMAIL (Standard Route)
 router.post('/verify-email', async (req, res) => {
   const { email, otp } = req.body;
 
@@ -99,7 +107,7 @@ router.post('/verify-email', async (req, res) => {
   }
 });
 
-// 3. LOGIN (Updated to check Verification)
+// 3. LOGIN (Standard Route)
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
@@ -127,7 +135,7 @@ router.post('/login', async (req, res) => {
   });
 });
 
-// --- FORGOT PASSWORD ROUTES (Keep these same as before) ---
+// --- FORGOT PASSWORD ROUTES (Updated to use EmailJS) ---
 router.post('/forgot-password', async (req, res) => {
   const { email } = req.body;
   try {
@@ -139,16 +147,34 @@ router.post('/forgot-password', async (req, res) => {
     user.resetPasswordExpires = Date.now() + 600000; 
     await user.save();
 
-    await transporter.sendMail({
-      from: '"ImageGenie Support" <no-reply@imagegenie.com>',
-      to: email,
-      subject: 'Password Reset OTP',
-      html: `<b>Your OTP for password reset is: ${otp}</b><br>It expires in 10 minutes.`
-    });
+    // --- EMERGENCY LOG ---
+    console.log("#############################################");
+    console.log("### EMERGENCY RESET OTP: ", otp, " ###");
+    console.log("#############################################");
 
-    res.json({ message: "OTP sent to email" });
+    // --- SEND EMAIL VIA EMAILJS ---
+    const emailData = {
+      service_id: process.env.EMAILJS_SERVICE_ID,
+      template_id: process.env.EMAILJS_TEMPLATE_ID,
+      user_id: process.env.EMAILJS_PUBLIC_KEY,
+      accessToken: process.env.EMAILJS_PRIVATE_KEY,
+      template_params: {
+        to_email: email,
+        to_name: user.username,
+        otp: otp,
+        message: "Here is your Password Reset Code. It expires in 10 minutes."
+      }
+    };
+
+    try {
+      await axios.post('https://api.emailjs.com/api/v1.0/email/send', emailData);
+    } catch (emailError) {
+      console.error('EmailJS Failed (Check Console for OTP):', emailError.message);
+    }
+
+    res.json({ message: "OTP sent (Check logs if email failed)" });
   } catch (error) {
-    res.status(500).json({ message: "Error sending email" });
+    res.status(500).json({ message: "Error processing request" });
   }
 });
 
@@ -187,6 +213,3 @@ router.post('/reset-password', async (req, res) => {
 
 
 export default router;
-
-
-
