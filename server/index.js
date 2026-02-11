@@ -36,7 +36,7 @@ const httpServer = createServer(app);
 // It allows the frontend (port 5173) to talk to this backend (port 8080).
 const io = new Server(httpServer, {
  cors: {
-    origin: ["http://localhost:5173", "https://imagegeniee.vercel.app"], 
+    origin: "http://imagegeniee.vercel.app", 
     methods: ["GET", "POST"],
   },
 });
@@ -315,4 +315,5 @@ const startServer = async () => {
 }
 
 startServer();
+
 
