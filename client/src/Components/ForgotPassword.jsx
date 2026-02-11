@@ -3,7 +3,6 @@ import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast, { Toaster } from 'react-hot-toast';
-import config from '../config';
 
 const ForgotPassword = () => {
   const [step, setStep] = useState(1); // 1: Email, 2: OTP, 3: New Password
@@ -20,7 +19,7 @@ const ForgotPassword = () => {
     const loadingToast = toast.loading('Sending OTP...');
     
     try {
-      await axios.post(`${config.backendUrl}/api/v1/auth/forgot-password`, { email });
+      await axios.post('http://localhost:8080/api/v1/auth/forgot-password', { email });
       setStep(2);
       toast.success('OTP sent to your email!', { id: loadingToast });
     } catch (error) {
@@ -36,7 +35,7 @@ const ForgotPassword = () => {
     const loadingToast = toast.loading('Verifying code...');
 
     try {
-      await axios.post(`${config.backendUrl}/api/v1/auth/verify-otp`, { email, otp });
+      await axios.post('http://localhost:8080/api/v1/auth/verify-otp', { email, otp });
       setStep(3);
       toast.success('OTP Verified', { id: loadingToast });
     } catch (error) {
@@ -52,7 +51,7 @@ const ForgotPassword = () => {
     const loadingToast = toast.loading('Updating password...');
 
     try {
-      await axios.post(`${config.backendUrl}/api/v1/auth/reset-password`, { email, newPassword });
+      await axios.post('http://localhost:8080/api/v1/auth/reset-password', { email, newPassword });
       toast.success('Password reset successful! Redirecting...', { id: loadingToast });
       
       setTimeout(() => {
@@ -149,6 +148,5 @@ const ForgotPassword = () => {
     </div>
   );
 };
-
 
 export default ForgotPassword;
