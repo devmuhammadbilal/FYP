@@ -5,7 +5,6 @@ import { preview } from '../assets';
 import { getRandomPrompt, downloadImage } from '../utils';
 import { Loader } from '../Components';
 import toast, { Toaster } from 'react-hot-toast';
-import config from '../config'; 
 
 const CreatePost = () => {
   const navigate = useNavigate();
@@ -35,7 +34,7 @@ const CreatePost = () => {
         setGeneratingImage(true);
         
         // 1. Generate Image via DALL-E
-        const response = await fetch(`${config.backendUrl}/api/v1/dalle`, {
+        const response = await fetch('http://localhost:8080/api/v1/dalle', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ prompt: form.prompt }),
@@ -66,7 +65,7 @@ const CreatePost = () => {
   // Helper function to save to DB
   const autoSaveToDatabase = async (photoData) => {
     try {
-      const response = await fetch(`${config.backendUrl}/api/v1/post`, {
+      const response = await fetch('http://localhost:8080/api/v1/post', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...form, photo: photoData }), 
@@ -92,7 +91,7 @@ const CreatePost = () => {
       const loadingToast = toast.loading('Sharing with community...');
 
       try {
-        await fetch(`${config.backendUrl}/api/v1/post/post/share`, {
+        await fetch('http://localhost:8080/api/v1/post/post/share', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ postId: currentPostId }),
@@ -246,6 +245,5 @@ const CreatePost = () => {
     </section>
   );
 };
-
 
 export default CreatePost;
