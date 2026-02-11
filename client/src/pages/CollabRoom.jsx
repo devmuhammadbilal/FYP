@@ -1,60 +1,69 @@
 import React, { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
 import { motion, AnimatePresence } from 'framer-motion';
-import { downloadImage } from '../utils';
-import { Loader } from '../Components';
+import { downloadImage } from '../utils'; // Ensure this path is correct
+import { Loader } from '../Components';   // Ensure this path is correct
 import toast, { Toaster } from 'react-hot-toast';
 import { debounce } from 'lodash';
 
+// Professional handling of Environment Variables with fallback
+// Replace line 10 with this:
+const SOCKET_URL = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SOCKET_URL) || "http://localhost:8080";
+
 const CollabRoom = () => {
+  // --- State & Refs ---
   const userName = localStorage.getItem('userName') || 'Guest';
   
   const socketRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const chatScrollRef = useRef(null);
-  
-  // Optimization Ref
-  const amILockedRef = useRef(false); 
+  const amILockedRef = useRef(false);
 
-  const [activeTab, setActiveTab] = useState('join'); 
-
-  const [room, setRoom] = useState("");
+  // UI States
+  const [activeTab, setActiveTab] = useState('join');
   const [inRoom, setInRoom] = useState(false);
+  const [room, setRoom] = useState("");
+  
+  // Chat & User States
   const [message, setMessage] = useState("");
   const [messageList, setMessageList] = useState([]);
   const [typingStatus, setTypingStatus] = useState("");
   const [activeUsers, setActiveUsers] = useState([]);
 
+  // Creative States
   const [prompt, setPrompt] = useState("");
   const [sharedImage, setSharedImage] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [statusMsg, setStatusMsg] = useState("");
-
-  // --- NEW: Gallery State ---
   const [gallery, setGallery] = useState([]);
-  const [activeWriter, setActiveWriter] = useState(null); 
+  const [activeWriter, setActiveWriter] = useState(null);
 
+  // --- Socket Connection & Event Listeners ---
   useEffect(() => {
-    socketRef.current = io("http://localhost:8080");
+    socketRef.current = io(SOCKET_URL);
 
-    socketRef.current.on("receive_message", (data) => setMessageList((list) => [...list, data]));
-    
-    // Handle Main Image Update
+    // Messaging
+    socketRef.current.on("receive_message", (data) => {
+      setMessageList((list) => [...list, data]);
+    });
+
+    // Image & Gallery
     socketRef.current.on("receive_shared_image", (data) => {
       setSharedImage(data.photo);
-      setPrompt(data.prompt); 
+      setPrompt(data.prompt);
     });
 
-    // --- NEW: Handle Gallery Update ---
     socketRef.current.on("update_gallery", (newGallery) => {
-        setGallery(newGallery);
+      setGallery(newGallery);
     });
 
+    // Synchronization
     socketRef.current.on("receive_prompt_sync", (text) => setPrompt(text));
     socketRef.current.on("update_user_list", (users) => setActiveUsers(users));
 
+    // Status Handling
     socketRef.current.on("generation_status", (data) => {
-      if(data.status === 'loading') {
+      if (data.status === 'loading') {
         setIsGenerating(true);
         setStatusMsg(`${data.user} is generating...`);
       } else if (data.status === 'success') {
@@ -73,51 +82,57 @@ const CollabRoom = () => {
       typingTimeoutRef.current = setTimeout(() => setTypingStatus(""), 3000);
     });
 
+    // Locking Mechanism
     socketRef.current.on("prompt_lock_status", (data) => {
-        setActiveWriter(data.locker);
-        if (data.locker === null) {
-            amILockedRef.current = false;
-        }
+      setActiveWriter(data.locker);
+      if (data.locker === null) {
+        amILockedRef.current = false;
+      }
     });
 
+    // Room Management
     socketRef.current.on("error_join", (msg) => {
-        toast.error(msg);
-        setInRoom(false);
-        setRoom(""); 
+      toast.error(msg);
+      setInRoom(false);
+      setRoom("");
     });
 
     socketRef.current.on("room_created", (roomId) => {
-        setRoom(roomId);
-        socketRef.current.emit("join_room", { room: roomId, user: userName });
-        setInRoom(true);
-        toast.success(`Room Created: ${roomId}`);
+      setRoom(roomId);
+      socketRef.current.emit("join_room", { room: roomId, user: userName });
+      setInRoom(true);
+      toast.success(`Room Created: ${roomId}`);
     });
 
-    return () => socketRef.current.disconnect();
+    return () => {
+      socketRef.current.disconnect();
+    };
   }, [userName]);
 
+  // --- Effects ---
   useEffect(() => {
     chatScrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messageList, typingStatus]);
 
+  // --- Handlers ---
   const joinRoom = () => {
     if (room !== "" && socketRef.current) {
       socketRef.current.emit("join_room", { room, user: userName });
-      setInRoom(true); 
+      setInRoom(true);
     } else {
-        toast.error("Please enter a Room ID");
+      toast.error("Please enter a Room ID");
     }
   };
 
   const createRoom = () => {
-      if (socketRef.current) {
-          socketRef.current.emit("create_room", { user: userName });
-      }
+    if (socketRef.current) {
+      socketRef.current.emit("create_room", { user: userName });
+    }
   };
 
   const copyRoomId = () => {
-      navigator.clipboard.writeText(room);
-      toast.success("Room ID copied!");
+    navigator.clipboard.writeText(room);
+    toast.success("Room ID copied!");
   };
 
   const sendMessage = async () => {
@@ -126,7 +141,7 @@ const CollabRoom = () => {
         room: room,
         author: userName,
         message: message,
-        time: new Date(Date.now()).getHours() + ":" + new Date(Date.now()).getMinutes(),
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
       await socketRef.current.emit("send_message", messageData);
       setMessageList((list) => [...list, messageData]);
@@ -139,12 +154,13 @@ const CollabRoom = () => {
     if (socketRef.current) socketRef.current.emit("typing", { room, author: userName });
   };
 
+  // Debounced Prompt Sync
   const debouncedPromptSync = useRef(
     debounce((text, currentRoom) => {
       if (socketRef.current) {
         socketRef.current.emit("sync_prompt", { room: currentRoom, text: text });
         socketRef.current.emit("stop_prompt_edit", { room: currentRoom });
-        amILockedRef.current = false; 
+        amILockedRef.current = false;
       }
     }, 500)
   ).current;
@@ -152,25 +168,32 @@ const CollabRoom = () => {
   const handlePromptChange = (e) => {
     const newText = e.target.value;
     setPrompt(newText);
+    
+    // Optimistic UI locking
     if (!amILockedRef.current && socketRef.current) {
        socketRef.current.emit("start_prompt_edit", { room, user: userName });
        amILockedRef.current = true;
     }
+    
     debouncedPromptSync(newText, room);
   };
 
   const handleCollaborativeGenerate = () => {
-    if(!prompt) return toast.error("Please enter a prompt first");
-    if(socketRef.current) socketRef.current.emit("collaborative_generate", { prompt, room, user: userName });
+    if (!prompt) return toast.error("Please enter a prompt first");
+    if (socketRef.current) {
+        socketRef.current.emit("collaborative_generate", { prompt, room, user: userName });
+    }
   };
 
   const isInputLocked = activeWriter && activeWriter !== userName;
 
   return (
-    <div className="h-[100dvh] w-full bg-[#f9fafe] pt-20 pb-2 px-2 sm:px-4 lg:pt-28 lg:pb-4 lg:px-8 flex flex-col overflow-hidden">
+    // Main Container: h-[100dvh] handles mobile browser bars properly
+    <div className="h-[100dvh] w-full bg-[#f9fafe] pt-4 pb-2 px-2 sm:pt-20 sm:pb-4 sm:px-4 lg:px-8 flex flex-col overflow-hidden">
       
       <Toaster position="top-center" reverseOrder={false} />
 
+      {/* Decorative Background */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-[-10%] left-[-10%] w-[300px] h-[300px] sm:w-[500px] sm:h-[500px] bg-purple-400/20 blur-[80px] sm:blur-[120px] rounded-full mix-blend-multiply" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[300px] h-[300px] sm:w-[500px] sm:h-[500px] bg-indigo-400/20 blur-[80px] sm:blur-[120px] rounded-full mix-blend-multiply" />
@@ -178,6 +201,7 @@ const CollabRoom = () => {
 
       <AnimatePresence mode="wait">
         {!inRoom ? (
+          // --- Join/Create Room Screen ---
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -190,24 +214,21 @@ const CollabRoom = () => {
             </div>
 
             <div className="flex p-1 bg-gray-100 rounded-xl mb-6">
-                <button 
-                    onClick={() => setActiveTab('join')}
-                    className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${activeTab === 'join' ? 'bg-white shadow-sm text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
-                >
-                    Join Room
-                </button>
-                <button 
-                    onClick={() => setActiveTab('create')}
-                    className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${activeTab === 'create' ? 'bg-white shadow-sm text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
-                >
-                    Create New
-                </button>
+                {['join', 'create'].map((tab) => (
+                    <button 
+                        key={tab}
+                        onClick={() => setActiveTab(tab)}
+                        className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all capitalize ${activeTab === tab ? 'bg-white shadow-sm text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                        {tab === 'join' ? 'Join Room' : 'Create New'}
+                    </button>
+                ))}
             </div>
 
             {activeTab === 'join' ? (
                 <div className="space-y-4">
                   <input
-                    className="w-full bg-white/50 border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 rounded-xl px-5 py-4 text-lg outline-none transition-all placeholder:text-gray-400 text-center uppercase tracking-widest"
+                    className="w-full bg-white/50 border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 rounded-xl px-5 py-4 text-base lg:text-lg outline-none transition-all placeholder:text-gray-400 text-center uppercase tracking-widest"
                     type="text"
                     placeholder="ENTER CODE"
                     maxLength={6}
@@ -241,16 +262,19 @@ const CollabRoom = () => {
             )}
           </motion.div>
         ) : (
+          // --- Main Workspace ---
           <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
+            initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="relative z-10 w-full max-w-7xl h-full mx-auto flex flex-col lg:grid lg:grid-cols-[1fr_350px] gap-3 lg:gap-6"
+            className="relative z-10 w-full max-w-7xl h-full mx-auto flex flex-col lg:grid lg:grid-cols-[1fr_350px] gap-2 lg:gap-6"
           >
-            <div className="flex flex-col gap-3 lg:gap-6 h-[45%] lg:h-full min-h-0">
+            {/* Left Column (Image & Tools) - Takes 55% height on mobile, full on desktop */}
+            <div className="flex flex-col gap-2 lg:gap-6 h-[55%] lg:h-full min-h-0">
               
+              {/* Header / Room Info */}
               <div className="flex items-center justify-between bg-white/70 backdrop-blur-md p-2 lg:p-4 rounded-xl lg:rounded-2xl border border-white/50 shadow-sm flex-shrink-0">
                 <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2 px-2 lg:px-3 py-1.5 bg-white rounded-lg border border-gray-100 shadow-sm">
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-lg border border-gray-100 shadow-sm">
                       <span className="hidden sm:inline text-xs font-bold text-gray-500 uppercase">Room ID</span>
                       <span className="font-mono font-bold text-indigo-600 text-sm lg:text-lg tracking-widest">{room}</span>
                       <button onClick={copyRoomId} className="ml-2 text-gray-400 hover:text-gray-600 p-1" title="Copy Code">
@@ -261,13 +285,13 @@ const CollabRoom = () => {
                   </div>
                 </div>
                 {statusMsg && (
-                  <span className="px-2 lg:px-3 py-1 bg-indigo-50 text-indigo-600 text-xs lg:text-sm font-medium rounded-full border border-indigo-100 animate-fade-in truncate max-w-[120px] lg:max-w-none">
+                  <span className="px-3 py-1 bg-indigo-50 text-indigo-600 text-xs lg:text-sm font-medium rounded-full border border-indigo-100 animate-fade-in truncate max-w-[120px] lg:max-w-none">
                     {statusMsg}
                   </span>
                 )}
               </div>
 
-              {/* Main Image Display Area */}
+              {/* Main Canvas Area */}
               <div className="flex-grow min-h-0 bg-white/40 backdrop-blur-sm border-2 border-dashed border-indigo-200/50 rounded-2xl lg:rounded-3xl overflow-hidden relative group transition-all hover:border-indigo-300 flex flex-col">
                 <div className="flex-grow relative overflow-hidden">
                     {sharedImage ? (
@@ -298,10 +322,9 @@ const CollabRoom = () => {
                     )}
                 </div>
 
-                {/* --- NEW GALLERY STRIP UI --- */}
-                {/* This section maps through the gallery array and displays thumbnails */}
+                {/* Gallery Strip */}
                 {gallery.length > 0 && (
-                    <div className="flex gap-3 overflow-x-auto py-2 px-3 bg-white/30 backdrop-blur-sm border-t border-white/40 h-20 lg:h-24 flex-shrink-0 scrollbar-hide z-10">
+                    <div className="flex gap-3 overflow-x-auto py-2 px-3 bg-white/30 backdrop-blur-sm border-t border-white/40 h-20 lg:h-24 flex-shrink-0 z-10">
                         {gallery.map((item) => (
                         <div 
                             key={item.id}
@@ -310,7 +333,7 @@ const CollabRoom = () => {
                                 setPrompt(item.prompt);
                             }}
                             className={`
-                                relative min-w-[60px] w-16 h-full lg:min-w-[80px] lg:w-20 rounded-lg overflow-hidden cursor-pointer border-2 transition-all hover:scale-105
+                                relative min-w-[60px] w-16 h-full lg:min-w-[80px] lg:w-20 rounded-lg overflow-hidden cursor-pointer border-2 transition-all hover:scale-105 flex-shrink-0
                                 ${sharedImage === item.url ? "border-indigo-500 ring-2 ring-indigo-200" : "border-transparent opacity-70 hover:opacity-100"}
                             `}
                         >
@@ -319,7 +342,6 @@ const CollabRoom = () => {
                         ))}
                     </div>
                 )}
-                {/* --------------------------- */}
                 
                 {isGenerating && (
                   <div className="absolute inset-0 bg-white/60 backdrop-blur-md flex flex-col items-center justify-center z-20">
@@ -329,11 +351,11 @@ const CollabRoom = () => {
                 )}
               </div>
 
+              {/* Prompt Input Area */}
               <div className={`
                 relative bg-white/80 backdrop-blur-xl p-2 rounded-xl lg:rounded-2xl shadow-lg border flex gap-2 flex-shrink-0 transition-all
                 ${isInputLocked ? "border-red-300 ring-2 ring-red-100" : "border-white/50"}
               `}>
-                
                 {isInputLocked && (
                     <div className="absolute -top-3 left-4 px-3 py-1 bg-red-500 text-white text-[10px] font-bold rounded-full shadow-md animate-bounce">
                         LOCKED BY {activeWriter.toUpperCase()}
@@ -345,7 +367,8 @@ const CollabRoom = () => {
                   onChange={handlePromptChange}
                   disabled={isInputLocked || isGenerating}
                   placeholder={isInputLocked ? `${activeWriter} is writing...` : "Describe image..."}
-                  className={`flex-grow bg-transparent px-3 py-2 lg:px-4 lg:py-3 text-sm lg:text-base outline-none font-medium min-w-0 transition-colors
+                  // text-base prevents iOS zoom on focus
+                  className={`flex-grow bg-transparent px-3 py-2 lg:px-4 lg:py-3 text-base lg:text-base outline-none font-medium min-w-0 transition-colors
                     ${isInputLocked ? "text-gray-400 cursor-not-allowed italic" : "text-gray-800 placeholder:text-gray-400"}
                   `}
                 />
@@ -367,8 +390,10 @@ const CollabRoom = () => {
               </div>
             </div>
 
-            <div className="bg-white/80 backdrop-blur-xl border border-white/50 rounded-2xl lg:rounded-3xl shadow-xl flex flex-col overflow-hidden h-full min-h-0 flex-grow">
+            {/* Right Column (Chat) - Takes remaining height (45%) on mobile */}
+            <div className="bg-white/80 backdrop-blur-xl border border-white/50 rounded-2xl lg:rounded-3xl shadow-xl flex flex-col overflow-hidden flex-grow h-full min-h-0">
               
+              {/* Chat Header */}
               <div className="p-3 lg:p-4 border-b border-gray-100 bg-white/50 flex-shrink-0 flex flex-col gap-2 lg:gap-3">
                 <div className="flex justify-between items-center">
                   <h3 className="font-bold text-gray-800 text-sm lg:text-base">Team Chat</h3>
@@ -394,13 +419,14 @@ const CollabRoom = () => {
                 </p>
               </div>
 
-              <div className="flex-grow overflow-y-auto p-3 lg:p-4 space-y-3 lg:space-y-4 scrollbar-hide">
+              {/* Messages Area */}
+              <div className="flex-grow overflow-y-auto p-3 lg:p-4 space-y-3 lg:space-y-4">
                 {messageList.map((msg, index) => {
                   const isMe = msg.author === userName;
                   return (
                     <div key={index} className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}>
                       <div className={`
-                        max-w-[85%] px-3 py-2 lg:px-4 lg:py-2.5 rounded-2xl text-xs lg:text-sm font-medium shadow-sm
+                        max-w-[85%] px-3 py-2 lg:px-4 lg:py-2.5 rounded-2xl text-sm lg:text-sm font-medium shadow-sm break-words
                         ${isMe 
                           ? "bg-gradient-to-br from-indigo-600 to-violet-600 text-white rounded-br-none" 
                           : "bg-white border border-gray-100 text-gray-700 rounded-bl-none"}
@@ -416,6 +442,7 @@ const CollabRoom = () => {
                 <div ref={chatScrollRef} />
               </div>
 
+              {/* Typing Indicator */}
               <AnimatePresence>
                 {typingStatus && (
                   <motion.div 
@@ -429,6 +456,7 @@ const CollabRoom = () => {
                 )}
               </AnimatePresence>
 
+              {/* Message Input */}
               <div className="p-2 lg:p-3 bg-white border-t border-gray-100 flex-shrink-0">
                 <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-full px-3 py-2 lg:px-4 lg:py-2 focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
                   <input
@@ -436,13 +464,14 @@ const CollabRoom = () => {
                     onChange={handleTyping}
                     onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
                     placeholder="Type..."
-                    className="flex-grow bg-transparent outline-none text-xs lg:text-sm text-gray-700"
+                    // text-base prevents iOS zoom on focus
+                    className="flex-grow bg-transparent outline-none text-base lg:text-sm text-gray-700 min-w-0"
                   />
                   <button 
                     onClick={sendMessage}
                     className={`p-1.5 lg:p-2 rounded-full transition-colors ${message ? 'text-indigo-600 hover:bg-indigo-100' : 'text-gray-400'}`}
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 lg:w-5 lg:h-5 transform rotate-90">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 lg:w-5 lg:h-5 transform rotate-90">
                       <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
                     </svg>
                   </button>
