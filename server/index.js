@@ -305,16 +305,21 @@ io.on("connection", (socket) => {
 // Start the HTTP Server
 const startServer = async () => {
   try {
-    // Connect to MongoDB first
     connectDB(process.env.MONGODB_URL);
-    // Then start listening for requests
-    httpServer.listen(8080, () => console.log('🚀 Server started on port http://localhost:8080'));
+    
+    // CHANGE IS HERE: Use process.env.PORT provided by Render
+    const PORT = process.env.PORT || 8080; 
+    
+    httpServer.listen(PORT, () => 
+      console.log(`🚀 Server started on port ${PORT}`)
+    );
   } catch (error) {
     console.log(error);
   }
 }
 
 startServer();
+
 
 
 
