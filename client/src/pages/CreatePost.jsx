@@ -6,6 +6,10 @@ import { getRandomPrompt, downloadImage } from '../utils';
 import { Loader } from '../Components';
 import toast, { Toaster } from 'react-hot-toast';
 
+// 1. DEFINE THE API URL DYNAMICALLY
+// This switches between Render (Live) and Localhost automatically
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+
 const CreatePost = () => {
   const navigate = useNavigate();
   const userName = localStorage.getItem('userName');
@@ -33,8 +37,8 @@ const CreatePost = () => {
       try {
         setGeneratingImage(true);
         
-        // 1. Generate Image via DALL-E
-        const response = await fetch('http://localhost:8080/api/v1/dalle', {
+        // 2. UPDATED URL: Call DALL-E Endpoint
+        const response = await fetch(`${API_URL}/api/v1/dalle`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ prompt: form.prompt }),
@@ -65,7 +69,8 @@ const CreatePost = () => {
   // Helper function to save to DB
   const autoSaveToDatabase = async (photoData) => {
     try {
-      const response = await fetch('http://localhost:8080/api/v1/post', {
+      // 3. UPDATED URL: Save Post Endpoint
+      const response = await fetch(`${API_URL}/api/v1/post`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...form, photo: photoData }), 
@@ -91,7 +96,8 @@ const CreatePost = () => {
       const loadingToast = toast.loading('Sharing with community...');
 
       try {
-        await fetch('http://localhost:8080/api/v1/post/post/share', {
+        // 4. UPDATED URL: Share Endpoint
+        await fetch(`${API_URL}/api/v1/post/post/share`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ postId: currentPostId }),
