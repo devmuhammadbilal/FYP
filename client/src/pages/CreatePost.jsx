@@ -8,7 +8,7 @@ import toast, { Toaster } from 'react-hot-toast';
 
 // 1. DEFINE THE API URL DYNAMICALLY
 // This switches between Render (Live) and Localhost automatically
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+const API_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8080";
 
 const CreatePost = () => {
   const navigate = useNavigate();
@@ -253,3 +253,4 @@ const CreatePost = () => {
 };
 
 export default CreatePost;
+
