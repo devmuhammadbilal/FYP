@@ -9,6 +9,9 @@ const Profile = () => {
   const [userPosts, setUserPosts] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // 1. Define the Backend URL dynamically
+  const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8080';
+
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -19,7 +22,8 @@ const Profile = () => {
           return; 
         }
 
-        const { data } = await axios.get('http://localhost:8080/api/v1/profile', {
+        // 2. Use the dynamic URL here
+        const { data } = await axios.get(`${backendUrl}/api/v1/profile`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -36,7 +40,7 @@ const Profile = () => {
     };
 
     fetchProfile();
-  }, []);
+  }, [backendUrl]); // Added dependency
 
   // Professional Loading State
   if (loading) {
