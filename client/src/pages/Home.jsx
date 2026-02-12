@@ -73,10 +73,13 @@ const Home = () => {
 
       <HeroSection onViewGallery={() => showcaseRef.current?.scrollIntoView({ behavior: 'smooth' })} />
       
+      {/* UPDATED: Adjusted margins for mobile (mt-10 vs mt-16) */}
       <section className="max-w-7xl mx-auto px-4 sm:px-8 pb-12 mt-10 sm:mt-16" ref={showcaseRef}>
         
+        {/* UPDATED: Flex layout handles mobile centering vs desktop split */}
         <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-8 sm:mb-10">
           <div className="w-full md:w-auto text-center md:text-left">
+            {/* UPDATED: Responsive text size */}
             <h1 className="text-2xl sm:text-3xl font-extrabold text-[#222328]">Community Showcase</h1>
             <p className="mt-2 text-[#666e75] text-sm sm:text-[16px] max-w-[500px] mx-auto md:mx-0">
               Browse through a collection of imaginative and visually stunning images.
@@ -110,6 +113,7 @@ const Home = () => {
               </h2>
             )}
             
+            {/* UPDATED: Grid gap reduced on mobile (gap-4) */}
             <motion.div 
               layout
               className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 auto-rows-[300px] grid-flow-dense" 
@@ -124,4 +128,5 @@ const Home = () => {
 };
 
 export default Home;
+
 
