@@ -5,7 +5,7 @@ import HeroSection from '../Components/Sections/HeroSection';
 import toast, { Toaster } from 'react-hot-toast'; 
 
 // 1. DEFINE THE API URL DYNAMICALLY
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+const API_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8080";
 
 const RenderCards = ({ data, title }) => {
   if (data?.length > 0) {
@@ -124,3 +124,4 @@ const Home = () => {
 };
 
 export default Home;
+
