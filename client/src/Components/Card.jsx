@@ -25,6 +25,10 @@ const Card = ({ _id, name, prompt, photo, index }) => {
     spanClasses = 'col-span-1 lg:col-span-2 lg:row-span-2 lg:col-start-3 min-h-[320px] lg:min-h-auto';
   }
 
+  // --- FIX FOR MIXED CONTENT WARNINGS ---
+  // Ensure the photo URL uses https if it's currently http
+  const securePhoto = photo?.replace("http://", "https://");
+
   return (
     <motion.div 
       initial={{ opacity: 0, scale: 0.9 }}
@@ -43,7 +47,7 @@ const Card = ({ _id, name, prompt, photo, index }) => {
           whileHover={{ scale: 1.05 }}
           transition={{ duration: 0.6 }}
           className="w-full h-full object-cover block"
-          src={photo}
+          src={securePhoto} // <--- UPDATED: Uses the secure HTTPS URL
           alt={prompt}
           loading="lazy"
         />
