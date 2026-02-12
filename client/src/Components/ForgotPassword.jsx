@@ -12,14 +12,18 @@ const ForgotPassword = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  // 1. DEFINE BACKEND URL
+  const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8080';
+
   // --- API HANDLERS ---
   const sendOtp = async (e) => {
     e.preventDefault();
     setLoading(true);
     const loadingToast = toast.loading('Sending OTP...');
-    
+     
     try {
-      await axios.post('http://localhost:8080/api/v1/auth/forgot-password', { email });
+      // 2. UPDATED URL
+      await axios.post(`${backendUrl}/api/v1/auth/forgot-password`, { email });
       setStep(2);
       toast.success('OTP sent to your email!', { id: loadingToast });
     } catch (error) {
@@ -35,7 +39,8 @@ const ForgotPassword = () => {
     const loadingToast = toast.loading('Verifying code...');
 
     try {
-      await axios.post('http://localhost:8080/api/v1/auth/verify-otp', { email, otp });
+      // 3. UPDATED URL
+      await axios.post(`${backendUrl}/api/v1/auth/verify-otp`, { email, otp });
       setStep(3);
       toast.success('OTP Verified', { id: loadingToast });
     } catch (error) {
@@ -51,9 +56,10 @@ const ForgotPassword = () => {
     const loadingToast = toast.loading('Updating password...');
 
     try {
-      await axios.post('http://localhost:8080/api/v1/auth/reset-password', { email, newPassword });
+      // 4. UPDATED URL
+      await axios.post(`${backendUrl}/api/v1/auth/reset-password`, { email, newPassword });
       toast.success('Password reset successful! Redirecting...', { id: loadingToast });
-      
+       
       setTimeout(() => {
         navigate('/login');
       }, 2000);
@@ -65,19 +71,17 @@ const ForgotPassword = () => {
   };
 
   return (
-    // UPDATED: Changed pt-20 to py-12 sm:pt-20 for better vertical centering on mobile
+    // ... (rest of your JSX remains exactly the same)
     <div className="min-h-screen flex items-center justify-center bg-[#f9fafe] relative overflow-hidden px-4 py-12 sm:pt-20">
       
       <Toaster position="top-center" reverseOrder={false} />
 
-      {/* UPDATED: Fixed sizes (w-[300px]) for mobile so blobs remain visible */}
       <div className="absolute top-[-10%] left-[-10%] w-[300px] h-[300px] sm:w-[500px] sm:h-[500px] bg-purple-400/20 blur-[80px] sm:blur-[120px] rounded-full mix-blend-multiply" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[300px] h-[300px] sm:w-[500px] sm:h-[500px] bg-indigo-400/20 blur-[80px] sm:blur-[120px] rounded-full mix-blend-multiply" />
 
       <motion.div 
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
-        // UPDATED: p-6 for mobile, p-10 for desktop
         className="w-full max-w-md bg-white/70 backdrop-blur-xl border border-white/50 shadow-2xl rounded-3xl p-6 sm:p-10 relative z-10"
       >
         <div className="text-center mb-6 sm:mb-8">
@@ -108,7 +112,6 @@ const ForgotPassword = () => {
             <motion.form key="step2" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -20, opacity: 0 }} onSubmit={verifyOtp} className="space-y-5 sm:space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">One-Time Password</label>
-                {/* UPDATED: tracking-widest for mobile, tracking-[0.5em] for desktop to prevent overflow */}
                 <input 
                     type="text" 
                     value={otp} 
