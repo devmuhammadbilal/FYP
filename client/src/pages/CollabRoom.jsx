@@ -7,8 +7,8 @@ import toast, { Toaster } from 'react-hot-toast';
 import { debounce } from 'lodash';
 
 // Professional handling of Environment Variables with fallback
-// Replace line 10 with this:
-const SOCKET_URL = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SOCKET_URL) || "http://localhost:8080";
+// Change this line:
+const SOCKET_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8080";
 
 const CollabRoom = () => {
   // --- State & Refs ---
@@ -40,7 +40,10 @@ const CollabRoom = () => {
 
   // --- Socket Connection & Event Listeners ---
   useEffect(() => {
-    socketRef.current = io(SOCKET_URL);
+   socketRef.current = io(SOCKET_URL, {
+        transports: ['websocket', 'polling'], // Critical for Render stability
+        withCredentials: true,
+    });
 
     // Messaging
     socketRef.current.on("receive_message", (data) => {
