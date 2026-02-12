@@ -4,6 +4,9 @@ import { Card, Loader } from '../Components';
 import HeroSection from '../Components/Sections/HeroSection';
 import toast, { Toaster } from 'react-hot-toast'; 
 
+// 1. DEFINE THE API URL DYNAMICALLY
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+
 const RenderCards = ({ data, title }) => {
   if (data?.length > 0) {
     return data.map((post, index) => (
@@ -29,10 +32,13 @@ const Home = () => {
     const fetchPosts = async () => {
       setLoading(true);
       try {
-        const response = await fetch('http://localhost:8080/api/v1/post', {
+        // 2. USE THE DYNAMIC URL HERE
+        // It will use Render URL on Vercel, and Localhost on your PC
+        const response = await fetch(`${API_URL}/api/v1/post`, {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
         });
+
         if (response.ok) {
           const result = await response.json();
           setAllPosts(result.data.reverse());
@@ -67,13 +73,10 @@ const Home = () => {
 
       <HeroSection onViewGallery={() => showcaseRef.current?.scrollIntoView({ behavior: 'smooth' })} />
       
-      {/* UPDATED: Adjusted margins for mobile (mt-10 vs mt-16) */}
       <section className="max-w-7xl mx-auto px-4 sm:px-8 pb-12 mt-10 sm:mt-16" ref={showcaseRef}>
         
-        {/* UPDATED: Flex layout handles mobile centering vs desktop split */}
         <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-8 sm:mb-10">
           <div className="w-full md:w-auto text-center md:text-left">
-            {/* UPDATED: Responsive text size */}
             <h1 className="text-2xl sm:text-3xl font-extrabold text-[#222328]">Community Showcase</h1>
             <p className="mt-2 text-[#666e75] text-sm sm:text-[16px] max-w-[500px] mx-auto md:mx-0">
               Browse through a collection of imaginative and visually stunning images.
@@ -107,7 +110,6 @@ const Home = () => {
               </h2>
             )}
             
-            {/* UPDATED: Grid gap reduced on mobile (gap-4) */}
             <motion.div 
               layout
               className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 auto-rows-[300px] grid-flow-dense" 
