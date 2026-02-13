@@ -219,7 +219,7 @@ io.on("connection", (socket) => {
 
       // Step B: Call OpenAI API (The AI Brain)
       const aiResponse = await openai.images.generate({
-        model: "dall-e-2", 
+        model: "dall-e-3", 
         prompt,
         n: 1,
         size: "1024x1024",
@@ -324,6 +324,7 @@ const startServer = async () => {
 }
 
 startServer();
+
 
 
 
